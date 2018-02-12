@@ -48,6 +48,8 @@ def ParseLogFile(log_file):
 
     f = open(log_file)
     freq_flag = "false"
+    g09_flag = "false"
+    g16_flag = "false"
     frequencies = []
     intensities = []
     for line in f:
@@ -57,12 +59,30 @@ def ParseLogFile(log_file):
         if 'Harmonic frequencies (cm**-1), IR intensities (KM/Mole)' in line:
             print "Frequency calculation recognized"
             freq_flag = "true"
-        if freq_flag == "true" and "Frequencies ---" in line:
+        if 'Gaussian 09:' in line:
+            print 'Gaussian 09 calculation recognized'
+            g09_flag = 'true'
+        if 'Gaussian 16:' in line:
+            print 'Gaussian 16 calculation recognized'
+            g16_flag = 'true'
+        # Gaussian 16 flags
+        if freq_flag == "true" and g16_flag == 'true' and "Frequencies --" in line:
+            blah, info = line.split('--',1)
+            data = info.split()
+            for i in range(len(data)):
+                frequencies.append(data[i])
+        if freq_flag == "true" and g16_flag == 'true' and "IR Inten    --" in line:
+            blah, info = line.split('--',1)
+            data = info.split()
+            for i in range(len(data)):
+                intensities.append(data[i])
+        # Gaussian 09 flags
+        if freq_flag == "true" and g09_flag == 'true' and "Frequencies ---" in line:
             blah, info = line.split('---',1)
             data = info.split()
             for i in range(len(data)):
                 frequencies.append(data[i])
-        if freq_flag == "true" and "IR Intensities ---" in line:
+        if freq_flag == "true" and g09_flag == 'true' and "IR Intensities ---" in line:
             blah, info = line.split('---',1)
             data = info.split()
             for i in range(len(data)):
@@ -91,7 +111,7 @@ for i in range(stick.shape[0]):# Scale frequencies
     stick[i,0] *= scale_factor
 
 v_end = int(stick[-1][0])
-v = np.arange(v_min,v_end+100,v_step)## Wavenumber axis
+v = np.arange(v_min,v_end+1000,v_step)## Wavenumber axis
 modes = np.zeros(len(v))## Intensities stick spectrum axis
 peaks = np.zeros((len(v),1))## Intensities gaussian convolution axis
 fwhm_steps = int(fwhm / v_step)## Number of steps on one side of gaussian
